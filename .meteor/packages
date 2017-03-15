@@ -35,3 +35,5 @@ fortawesome:fontawesome
 twbs:bootstrap
 mrt:later
 chrismbeckett:toastr
+accounts-base
+accounts-password

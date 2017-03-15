@@ -5,78 +5,78 @@ import {Job} from 'meteor/vsivsi:job-collection';
 import {later} from 'meteor/mrt:later';
 
 // job collections
-import SLA_Jobs from './collections';
+import SLAs_Jobs from './collections';
+import Workers from './workers';
+
+// functions
+import {
+  createJob,
+  pauseJobs,
+  resumeJobs,
+  restartJobs,
+  cancelJobs,
+  removeJobs,
+} from './functions';
 
 const Controllers = {};
 
 Controllers.create = new ValidatedMethod({
   name: 'controllers.create',
   validate: null,
-  run({country, type, attributes, data}) {
-    const
-      jcName = country.toUpperCase(),
-      {
-        depends = [],
-        priority = 'normal',
-        retry = {},
-        repeat = {
-          schedule: later.parse.text('every 30 seconds')   // Rerun this job every day at 6:00 AM
-        },
-        delay = 0,
-        after = new Date()
-      } = attributes
-      ;
-
-    const job = new Job(SLA_Jobs[jcName], type, data);
-    job
-      .depends(depends)
-      .priority(priority)
-      .retry(retry)
-      .repeat(repeat)
-      .delay(delay)
-      .after(after)
-      .save()
-    ;
-
-    return {};
+  run({type, attributes, data}) {
+    return createJob(type, attributes, data);
   }
 });
 
 Controllers.edit = new ValidatedMethod({
   name: 'controllers.edit',
   validate: null,
-  run({}) {
-    // jobs = AdminJobs.find({type, status: {$in: AdminJobs.jobStatusCancellable}}, {
-    //   fields: {
-    //     _id: true,
-    //     status: true
-    //   }
-    // }).fetch();
-    // if (_.isEmpty(jobs)) {
-    //   // console.log(`create new job ${type}`)
-    //   message = Jobs.create(type, attributes, data);
-    //   AdminJobs.processJobs(type, worker);
-    //   return {message}; // return new job id
-    // } else {
-    //   jobs.map(job => {
-    //     if (job.status === "running") {
-    //       message = "running";
-    //       return {message}; // job running, couldn't update
-    //     } else {
-    //       status = AdminJobs.cancelJobs([job._id]);
-    //       if (status) {
-    //         // console.log(`cancel job, create new job`)
-    //         // cancel job success, create new job with new attributes
-    //         message = Jobs.create(type, attributes, data);
-    //         AdminJobs.processJobs(type, worker);
-    //         return {message}; // return new job id
-    //       } else {
-    //         message = "failed";
-    //         return {message}; // update job failed
-    //       }
-    //     }
-    //   });
-    // }
+  run({type, attributes, data}) {
+    const canceled = cancelJobs(type);
+    if (canceled) {
+      // create Job
+      return createJob(type, attributes, data);
+    } else {
+      return false;
+    }
+  }
+});
+
+Controllers.pause = new ValidatedMethod({
+  name: 'controllers.pause',
+  validate: null,
+  run({type}) {
+    return pauseJobs(type);
+  }
+});
+
+Controllers.restart = new ValidatedMethod({
+  name: 'controllers.restart',
+  validate: null,
+  run({type}) {
+    return restartJobs(type);
+  }
+});
+
+Controllers.resume = new ValidatedMethod({
+  name: 'controllers.resume',
+  validate: null,
+  run({type}) {
+    return resumeJobs(type);
+  }
+});
+
+Controllers.remove = new ValidatedMethod({
+  name: 'controllers.remove',
+  validate: null,
+  run({type}) {
+    const canceled = cancelJobs(type);
+    if (canceled) {
+      // remove Jobs
+      return removeJobs(type);
+    } else {
+      return false;
+    }
   }
 });
 

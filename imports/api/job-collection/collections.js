@@ -3,15 +3,15 @@
  */
 import {JobCollection} from 'meteor/vsivsi:job-collection';
 
-const SLA_Jobs = {};
+// SLAs Jobs collections
+const SLAs_Jobs = new JobCollection('slas');
 
-// Vietnam SLA Job collections
-SLA_Jobs.VN = new JobCollection('vn_slas', {noCollectionSuffix: true});
+SLAs_Jobs.allow({
+  // The "admin" below represents
+  // the grouping of all remote methods
+  admin: function (userId, method, params) {
+    return true;
+  }
+});
 
-// Cambodia SLA Job collections
-SLA_Jobs.KH = new JobCollection('kh_slas', {noCollectionSuffix: true});
-
-// Laos SLA Job collections
-SLA_Jobs.LA = new JobCollection('la_slas', {noCollectionSuffix: true});
-
-export default SLA_Jobs
+export default SLAs_Jobs
