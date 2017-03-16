@@ -66,6 +66,14 @@ Controllers.resume = new ValidatedMethod({
   }
 });
 
+Controllers.cancel = new ValidatedMethod({
+  name: 'controllers.cancel',
+  validate: null,
+  run({type}) {
+    return cancelJobs(type);
+  }
+});
+
 Controllers.remove = new ValidatedMethod({
   name: 'controllers.remove',
   validate: null,
