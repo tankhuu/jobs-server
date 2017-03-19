@@ -10,6 +10,7 @@ import Workers from './workers';
 
 // functions
 import {
+  getJobs,
   createJob,
   pauseJobs,
   resumeJobs,
@@ -19,6 +20,14 @@ import {
 } from './functions';
 
 const Controllers = {};
+
+Controllers.getJobs = new ValidatedMethod({
+  name: 'controllers.getJobs',
+  validate: null,
+  run({type}) {
+    return getJobs(type);
+  }
+});
 
 Controllers.create = new ValidatedMethod({
   name: 'controllers.create',

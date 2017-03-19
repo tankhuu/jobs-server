@@ -3,6 +3,10 @@ import SLAs_Jobs from './collections';
 import Workers from './workers';
 import _ from 'lodash';
 
+export const getJobs = (type) => {
+  return SLAs_Jobs.find({type}, {fields: {status: true}}).fetch();
+};
+
 export const createJob = (type, attributes, data) => {
   const
     {
