@@ -1,0 +1,30 @@
+{
+  "public": {
+    "env": "dev"
+  },
+  "clients": {
+    "bots": {
+      "url": "http://localhost:3000/"
+    }
+  },
+  "logger": {
+    "file": {
+      "vn": {
+        "name": "jobs",
+        "filename": "jobs",
+        "logstash": true,
+        "rotationFormat": true,
+        "zippedArchive": true,
+        "maxFiles": 10
+      }
+    }
+  },
+  "jobs": {
+    "runTime": {
+      "jobs": "at 6:00 am on the 23th day of the month"
+    },
+    "enable": {
+      "jobs": false
+    }
+  }
+}
