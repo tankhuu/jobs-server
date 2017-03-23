@@ -12,11 +12,9 @@ Workers.test = function (job, cb) {
 };
 
 Workers.execute = function(job, callback) { // cb could be used to monitor the checking SLA process
-  const {method} = job.data; // all information which need to call API/Methods
+  const {method = 'bots.elastic', slaId} = job.data; // all information which need to call API/Methods
 
   try {
-    // todo
-    // call the API or Methods
     /*
     console.log('call API', new Date());
     console.log('type', job.type);
@@ -26,8 +24,7 @@ Workers.execute = function(job, callback) { // cb could be used to monitor the c
     */
     const BotsServer = DDP.connect('http://localhost:3000');
     let result = {};
-    console.log(BotsServer)
-    BotsServer.call(method, {}, (err, res) => {
+    BotsServer.call(method, {slaId}, (err, res) => {
       if(err) {
         throw new Meteor.Error('EXECUTE_TEST_BOT_FAILED', err.reason);
       }
