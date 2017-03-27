@@ -2,6 +2,7 @@
  * Workers definitions
  */
 import {DDP} from 'meteor/ddp-client';
+import {Meteor} from 'meteor/meteor';
 
 const Workers = {};
 
@@ -10,23 +11,24 @@ Workers.test = function (job, cb) {
   job.done();
   cb();
 };
-
+/**
+ * Function execute job in server side of job server
+ * @param job
+ * @param callback
+ */
 Workers.execute = function(job, callback) { // cb could be used to monitor the checking SLA process
   const {method = 'bots.elastic', slaId} = job.data; // all information which need to call API/Methods
 
   try {
-    /*
-    console.log('call API', new Date());
-    console.log('type', job.type);
-    console.log('data', job.data);
-    console.log('------------------');
-    const result = {notify: true};
-    */
-    const BotsServer = DDP.connect('http://localhost:3000');
+    const {host, port} = Meteor.settings.clients.bots;
+    const BotsServer = DDP.connect(`http://${host}:${port}`);
     let result = {};
     BotsServer.call(method, {slaId}, (err, res) => {
       if(err) {
-        throw new Meteor.Error('EXECUTE_TEST_BOT_FAILED', err.reason);
+        console.log(err.reason);
+        job.log(`EXECUTE_BOT_FAIELD: ${err.reason}`, {level: 'danger'})
+        job.fail();
+        callback();
       }
       result = res;
     });

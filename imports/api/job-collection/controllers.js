@@ -83,6 +83,20 @@ Controllers.cancel = new ValidatedMethod({
   }
 });
 
+Controllers.start = new ValidatedMethod({
+  name: 'controllers.start',
+  validate: null,
+  run({type, attributes, data}) {
+    const canceled = cancelJobs(type);
+    if (canceled) {
+      // remove Jobs
+      return createJob(type, attributes, data);;
+    } else {
+      return false;
+    }
+  }
+});
+
 Controllers.remove = new ValidatedMethod({
   name: 'controllers.remove',
   validate: null,

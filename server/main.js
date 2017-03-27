@@ -1,6 +1,7 @@
 import {Meteor} from 'meteor/meteor';
 import '/imports/startup/server';
 import _ from 'lodash';
+import {Accounts} from 'meteor/accounts-base';
 
 // job collections
 import SLAs_Jobs from '/imports/api/job-collection/collections';
@@ -21,4 +22,6 @@ Meteor.startup(function () {
     console.log(`processing job: ${type}`);
     SLAs_Jobs.processJobs(type, Workers.execute);
   });
+  
+  // const adminUser = Accounts.users.findOne({})
 });
