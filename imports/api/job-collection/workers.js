@@ -25,7 +25,7 @@ Workers.execute = function(job, callback) { // cb could be used to monitor the c
     let result = {};
     BotsServer.call(method, {data: job.data}, (err, res) => {
       if(err) {
-        job.log(`EXECUTE_BOT_FAIELD: ${err.reason}`, {level: 'danger'})
+        job.log(`EXECUTE_BOT_FAILED: ${err.reason}`, {level: 'danger'})
         job.fail();
         callback();
       }
