@@ -3,6 +3,7 @@ import {ValidatedMethod} from 'meteor/mdg:validated-method';
 import {ValidationError} from 'meteor/mdg:validation-error';
 import {Job} from 'meteor/vsivsi:job-collection';
 import {later} from 'meteor/mrt:later';
+import {Meteor} from 'meteor/meteor';
 
 // job collections
 import SLAs_Jobs from './collections';
@@ -16,6 +17,7 @@ import {
   resumeJobs,
   restartJobs,
   cancelJobs,
+  readyJobs,
   removeJobs,
 } from './functions';
 
@@ -75,6 +77,14 @@ Controllers.resume = new ValidatedMethod({
   }
 });
 
+Controllers.ready = new ValidatedMethod({
+  name: 'controllers.ready',
+  validate: null,
+  run({type}) {
+    return readyJobs(type);
+  }
+});
+
 Controllers.cancel = new ValidatedMethod({
   name: 'controllers.cancel',
   validate: null,
@@ -86,13 +96,20 @@ Controllers.cancel = new ValidatedMethod({
 Controllers.start = new ValidatedMethod({
   name: 'controllers.start',
   validate: null,
-  run({type, attributes, data}) {
-    const canceled = cancelJobs(type);
-    if (canceled) {
-      // remove Jobs
-      return createJob(type, attributes, data);;
-    } else {
-      return false;
+  async run({type, attributes, data}) {
+    try {
+      const canceled = await cancelJobs(type);
+      if (canceled) {
+        // create Job
+        const result = await createJob(type, attributes, data);
+        if (result) {
+          return {_id: data.slaId};
+        } else {
+          throw new Meteor.Error('controllers.start', `Can't create job in Job Server.`);
+        }
+      }
+    } catch (err) {
+      throw new Meteor.Error('controllers.start', err.message);
     }
   }
 });

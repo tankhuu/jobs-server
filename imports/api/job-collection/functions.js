@@ -2,6 +2,7 @@ import {Job} from 'meteor/vsivsi:job-collection';
 import SLAs_Jobs from './collections';
 import Workers from './workers';
 import _ from 'lodash';
+import {Promise} from 'meteor/promise';
 
 export const getJobs = (type) => {
   return SLAs_Jobs.find({type}, {fields: {status: true}}).fetch();
@@ -19,83 +20,142 @@ export const createJob = (type, attributes, data) => {
       delay = 0,
       after = new Date()
     } = attributes,
-    {
-      // API information
-    } = data
+    {} = data
     ;
 
-  const job = new Job(SLAs_Jobs, type, data);
-  job
-    .depends(depends)
-    .priority(priority)
-    .retry(retry)
-    .repeat(repeat)
-    .delay(delay)
-    .after(after)
-    .save()
-  ;
+  try {
+    const job = new Job(SLAs_Jobs, type, data);
+    job
+      .depends(depends)
+      .priority(priority)
+      .retry(retry)
+      .repeat(repeat)
+      .delay(delay)
+      .after(after)
+      .save()
+    ;
 
-  SLAs_Jobs.processJobs(type, Workers.execute);
-
-  return true;
+    return SLAs_Jobs.processJobs(type, Workers.execute);
+  } catch (err) {
+    throw new Meteor.Error('SLAJob.create', err.message);
+  }
 };
 
 export const pauseJobs = (type) => {
   const ids = SLAs_Jobs
-    .find({type, status: { $in: Job.jobStatusPausable }}, { fields: { _id: 1 }})
+    .find({type, status: {$in: Job.jobStatusPausable}}, {fields: {_id: 1}})
     .fetch()
     .map(j => j._id)
 
-  if(_.isEmpty(ids)) {
-    return {message: `no job with type: ${type}`};
+  if (!_.isEmpty(ids)) {
+    try {
+      return SLAs_Jobs.pauseJobs(ids);
+    } catch (err) {
+      throw new Meteor.Error('SLAJob.cancel', err.message);
+    }
+  } else {
+    return true;
   }
-  return SLAs_Jobs.pauseJobs(ids);
 };
 
 export const resumeJobs = (type) => {
   const ids = SLAs_Jobs
-    .find({type, status: "paused" }, { fields: { _id: 1 }})
+    .find({type, status: "paused"}, {fields: {_id: 1}})
     .fetch()
     .map(j => j._id)
 
-  if(_.isEmpty(ids)) {
-    return {message: `no job with type: ${type}`};
+  if (!_.isEmpty(ids)) {
+    try {
+      return SLAs_Jobs.resumeJobs(ids);
+    } catch (err) {
+      throw new Meteor.Error('SLAJob.cancel', err.message);
+    }
+  } else {
+    return true;
   }
-  return SLAs_Jobs.resumeJobs(ids);
 };
 
 export const restartJobs = (type) => {
   const ids = SLAs_Jobs
-    .find({type, status: { $in: Job.jobStatusRestartable }}, { fields: { _id: 1 }})
+    .find({type, status: {$in: Job.jobStatusRestartable}}, {fields: {_id: 1}})
     .fetch()
     .map(j => j._id)
 
-  if(_.isEmpty(ids)) {
-    return {message: `no job with type: ${type}`};
+  if (!_.isEmpty(ids)) {
+    try {
+      return SLAs_Jobs.restartJobs(ids);
+    } catch (err) {
+      throw new Meteor.Error('SLAJob.cancel', err.message);
+    }
+  } else {
+    return true;
   }
-  return SLAs_Jobs.restartJobs(ids);
 };
 
 export const cancelJobs = (type) => {
   const ids = SLAs_Jobs
-    .find({type, status: { $in: Job.jobStatusCancellable }}, { fields: { _id: 1 }})
+    .find({type, status: {$in: Job.jobStatusCancellable}}, {fields: {_id: 1}})
     .fetch()
     .map(j => j._id)
 
-  if(_.isEmpty(ids)) {
-    return {message: `no job with type: ${type}`};
+  if (!_.isEmpty(ids)) {
+    try {
+      return SLAs_Jobs.cancelJobs(ids);
+    } catch (err) {
+      throw new Meteor.Error('SLAJob.cancel', err.message);
+    }
+  } else {
+    return true;
   }
-  return SLAs_Jobs.cancelJobs(ids);
+};
+
+export const readyJobs = (type) => {
+  const ids = SLAs_Jobs
+    .find({type, status: 'waiting'}, {fields: {_id: 1}})
+    .fetch()
+    .map(j => j._id)
+
+  if (!_.isEmpty(ids)) {
+    try {
+      return SLAs_Jobs.readyJobs(ids, {force: true});
+    } catch (err) {
+      throw new Meteor.Error('SLAJob.ready', err.message);
+    }
+  } else {
+    return true;
+  }
 };
 
 export const removeJobs = (type) => {
   const ids = SLAs_Jobs
-    .find({type, status: { $in: Job.jobStatusRemovable }}, { fields: { _id: 1 }})
+    .find({type, status: {$in: Job.jobStatusRemovable}}, {fields: {_id: 1}})
     .fetch()
     .map(j => j._id)
 
-  if(_.isEmpty(ids)) {
-    return {message: `no job with type: ${type}`};
+  if (!_.isEmpty(ids)) {
+    try {
+      return SLAs_Jobs.removeJobs(ids);
+    } catch (err) {
+      throw new Meteor.Error('SLAJob.remove', err.message);
+    }
+  } else {
+    return true;
   }
-  return SLAs_Jobs.removeJobs(ids);
+};
+
+export const removeExpiredJobs = () => {
+  const
+    today = new Date(),
+    {duration, unit} = Meteor.settings.admin.cleanup.log,
+    cleanupDate = moment(today)
+      .subtract(duration, unit);
+  const selector = {
+    createdAt: {$lt: new Date(cleanupDate)},
+    status: { $in: Job.jobStatusRestartable }
+  };
+  try {
+    return SLAs_Jobs.remove(selector);
+  } catch(err) {
+    throw new Meteor.Error('removeExpiredJobs', err.message);
+  }
 };
