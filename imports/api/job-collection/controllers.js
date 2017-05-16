@@ -34,8 +34,15 @@ Controllers.getJobs = new ValidatedMethod({
 Controllers.create = new ValidatedMethod({
   name: 'controllers.create',
   validate: null,
-  run({type, attributes, data}) {
-    return createJob(type, attributes, data);
+  async run({type, attributes, data}) {
+    if(!this.isSimulation) {
+      try {
+        const result = await createJob(type, attributes, data);
+        return result;
+      } catch(err) {
+        throw new Meteor.Error('controllers.create', err.message);
+      }
+    }
   }
 });
 

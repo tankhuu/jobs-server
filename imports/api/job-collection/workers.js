@@ -3,6 +3,7 @@
  */
 import {DDP} from 'meteor/ddp-client';
 import {Meteor} from 'meteor/meteor';
+import {removeExpiredJobs} from '/imports/api/job-collection';
 
 const Workers = {};
 
@@ -36,6 +37,17 @@ Workers.execute = function(job, callback) { // cb could be used to monitor the c
     callback();
   } catch(e) {
     job.fail(e);
+    callback();
+  }
+};
+
+Workers.cleanupJobs = (job, callback) => {
+  try {
+    const result = removeExpiredJobs();
+    job.done(result);
+    callback();
+  } catch(err) {
+    job.fail(err.message);
     callback();
   }
 };

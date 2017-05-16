@@ -19,9 +19,45 @@ Meteor.startup(function () {
     ;
   types = _.uniq(types);
   types.map(type => {
-    console.log(`processing job: ${type}`);
-    SLAs_Jobs.processJobs(type, Workers.execute);
+    if(type.split('-')[0] !== 'admin') {
+      console.log(`processing job: ${type}`);
+      SLAs_Jobs.processJobs(type, Workers.execute);
+    }
   });
   
   // const adminUser = Accounts.users.findOne({})
+  /* Job cleanup indices */
+  if (Meteor.settings.admin.cleanup.jobs.enable) {
+    const {frequency: freqText} = Meteor.settings.admin.cleanup.jobs;
+    const type = 'admin-cleanupJobs';
+    const noJobs = SLAs_Jobs.find({type}).count();
+
+    if(noJobs === 0) {
+      const
+        depends = [],
+        priority = 'normal',
+        retry = {},
+        repeat = {
+          schedule: later.parse.text(freqText)
+        },
+        delay = 0,
+        after = new Date();
+
+      try {
+        const job = new Job(SLAs_Jobs, type, {});
+        job
+          .depends(depends)
+          .priority(priority)
+          .retry(retry)
+          .repeat(repeat)
+          .delay(delay)
+          .after(after)
+          .save()
+        ;
+      } catch (err) {
+        throw new Meteor.Error('CREATE_CLEANUP_JOBS', err.message);
+      }
+    }
+    SLAs_Jobs.processJobs(type, Workers.cleanupJobs);
+  }
 });

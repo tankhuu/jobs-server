@@ -3,6 +3,7 @@ import SLAs_Jobs from './collections';
 import Workers from './workers';
 import _ from 'lodash';
 import {Promise} from 'meteor/promise';
+import moment from 'moment';
 
 export const getJobs = (type) => {
   return SLAs_Jobs.find({type}, {fields: {status: true}}).fetch();
@@ -146,7 +147,7 @@ export const removeJobs = (type) => {
 export const removeExpiredJobs = () => {
   const
     today = new Date(),
-    {duration, unit} = Meteor.settings.admin.cleanup.log,
+    {duration, unit} = Meteor.settings.admin.cleanup.jobs,
     cleanupDate = moment(today)
       .subtract(duration, unit);
   const selector = {
@@ -154,7 +155,8 @@ export const removeExpiredJobs = () => {
     status: { $in: Job.jobStatusRestartable }
   };
   try {
-    return SLAs_Jobs.remove(selector);
+    const removed = SLAs_Jobs.remove(selector);
+    return removed;
   } catch(err) {
     throw new Meteor.Error('removeExpiredJobs', err.message);
   }
