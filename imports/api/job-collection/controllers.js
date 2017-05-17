@@ -35,13 +35,15 @@ Controllers.create = new ValidatedMethod({
   name: 'controllers.create',
   validate: null,
   async run({type, attributes, data}) {
-    if(!this.isSimulation) {
-      try {
-        const result = await createJob(type, attributes, data);
-        return result;
-      } catch(err) {
-        throw new Meteor.Error('controllers.create', err.message);
+    try {
+      const result = await createJob(type, attributes, data);
+      if(result) {
+        return {_id: data.slaId};
+      } else {
+        throw new Meteor.Error('controllers.create', `Can't create job in Job Server.`);
       }
+    } catch (err) {
+      throw new Meteor.Error('controllers.create', err.message);
     }
   }
 });
@@ -49,13 +51,20 @@ Controllers.create = new ValidatedMethod({
 Controllers.edit = new ValidatedMethod({
   name: 'controllers.edit',
   validate: null,
-  run({type, attributes, data}) {
-    const canceled = cancelJobs(type);
-    if (canceled) {
-      // create Job
-      return createJob(type, attributes, data);
-    } else {
-      return false;
+  async run({type, attributes, data}) {
+    try {
+      const canceled = await cancelJobs(type);
+      if (canceled) {
+        // create Job
+        const result = await createJob(type, attributes, data);
+        if (result) {
+          return {_id: data.slaId};
+        } else {
+          throw new Meteor.Error('controllers.edit', `Can't edit job in Job Server.`);
+        }
+      }
+    } catch (err) {
+      throw new Meteor.Error('controllers.edit', err.message);
     }
   }
 });
