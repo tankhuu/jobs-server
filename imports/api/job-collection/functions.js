@@ -152,7 +152,7 @@ export const removeExpiredJobs = () => {
       .subtract(duration, unit);
   const selector = {
     createdAt: {$lt: new Date(cleanupDate)},
-    status: { $in: Job.jobStatusRestartable }
+    status: { $in: Job.jobStatusRemovable }
   };
   try {
     const removed = SLAs_Jobs.remove(selector);
