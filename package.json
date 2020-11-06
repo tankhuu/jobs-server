@@ -2,9 +2,10 @@
   "name": "jobs-server",
   "private": true,
   "scripts": {
-    "start": "meteor run --settings settings.json --port 4000"
+    "start": "meteor run --port 4000"
   },
   "dependencies": {
+    "babel-runtime": "^6.26.0",
     "bcrypt": "^1.0.2",
     "lodash": "^4.17.4",
     "meteor-node-stubs": "~0.2.0",
